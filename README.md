@@ -45,7 +45,7 @@ Enable GitHub Pages:
 
 Your app will be available at:
 
-https://YOUR_USERNAME.github.io/flashcard-learning-app/
+https://yashu.github.io/flashcard-learning-app/
 
 ## License
 
