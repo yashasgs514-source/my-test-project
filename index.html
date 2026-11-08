@@ -1,1 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlashLearn - Study Smarter</title>
+<style>
+:root {
+  --bg:#f5f6fc; --card:#fff; --text:#20243a;
+  --muted:#777d91; --primary:#6958e8;
+  --border:#e8e8f1;
+}
+.dark {
+  --bg:#171827; --card:#24263a; --text:#f4f4ff;
+  --muted:#a5a8bd; --border:#383a50;
+}
+* {box-sizing:border-box}
+body {
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:Inter,system-ui,Arial,sans-serif;
+  transition:.2s;
+}
+header {
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:18px 6%;display:flex;justify-content:space-between;
+  align-items:center;gap:12px;
+}
+.logo {font-size:22px;font-weight:800;color:var(--primary)}
+button,input,select,textarea {font:inherit}
+button {
+  cursor:pointer;border:0;border-radius:10px;padding:11px 16px;
+  background:var(--primary);color:white;font-weight:600;
+}
+button.secondary {background:var(--bg);color:var(--text);border:1px solid var(--border)}
+button.danger {background:#dc5362}
+main {max-width:1050px;margin:35px auto;padding:0 20px}
+h1 {font-size:32px;margin-bottom:8px}
+.muted {color:var(--muted)}
+.stats {display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:25px 0}
+.stat,.panel,.study-card {
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:20px;
+}
+.stat strong {display:block;font-size:28px;margin-top:8px}
+.toolbar {display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+input,select,textarea {
+  background:var(--card);color:var(--text);
+  border:1px solid var(--border);border-radius:10px;
+  padding:12px;width:100%;
+}
+.toolbar input {flex:1;min-width:180px}
+.study-card {max-width:650px;margin:25px auto;text-align:center;padding:35px}
+.study-card h2 {font-size:25px;min-height:90px;display:grid;place-items:center}
+.study-card .answer {
+  border-top:1px solid var(--border);padding-top:20px;
+  font-size:18px;line-height:1.6;
+}
+.actions {display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:20px}
+.progress {height:8px;background:var(--border);border-radius:9px;overflow:hidden}
+.progress div {height:100%;background:var(--primary);width:0;transition:.2s}
+.deck-list {display:flex;gap:10px;flex-wrap:wrap;margin:15px 0}
+.deck {
+  padding:9px 14px;border-radius:20px;background:var(--card);
+  border:1px solid var(--border);cursor:pointer;
+}
+.deck.active {background:var(--primary);color:white}
+#editor {display:none;margin:20px 0}
+#editor form {display:grid;gap:12px}
+.card-list {display:grid;gap:10px;margin-top:15px}
+.card-row {
+  display:flex;justify-content:space-between;align-items:center;
+  gap:12px;background:var(--card);padding:14px;
+  border:1px solid var(--border);border-radius:12px;
+}
+.card-row small {color:var(--muted)}
+footer {text-align:center;color:var(--muted);padding:35px}
+@media(max-width:600px) {
+  .stats {grid-template-columns:1fr}
+  header {padding:15px}
+  h1 {font-size:26px}
+  .study-card {padding:20px}
+  .card-row {align-items:flex-start}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">✦ FlashLearn</div>
+  <button class="secondary" id="themeBtn">🌙 Theme</button>
+</header>
 
+<main>
+  <h1>Learn smarter. Remember longer.</h1>
+  <p class="muted">Your personal space to practice and master anything.</p>
+
+  <section class="stats">
+    <div class="stat">📚 Total Cards<strong id="total">0</strong></div>
+    <div class="stat">🎯 Studied<strong id="studied">0</strong></div>
+    <div class="stat">⭐ Mastered<strong id="mastered">0</strong></div>
+  </section>
+
+  <section class="panel">
+    <div class="toolbar">
+      <input id="search" placeholder="Search flashcards...">
+      <button id="addBtn">+ Add Card</button>
+    </div>
+
+    <div class="deck-list" id="decks"></div>
+
+    <div id="editor">
+      <h2 id="editorTitle">Create flashcard</h2>
+      <form id="cardForm">
+        <input id="question" placeholder="Enter your question" required>
+        <textarea id="answer" placeholder="Enter the answer" required rows="3"></textarea>
+        <input id="category" placeholder="Subject / deck" value="General" required>
+        <div class="actions">
+          <button type="submit">Save Card</button>
+          <button type="button" class="secondary" id="cancelBtn">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <h2>My Flashcards</h2>
+    <div id="cardList" class="card-list"></div>
+  </section>
+
+  <section class="study-card">
+    <p class="muted" id="counter">Ready to study?</p>
+    <div class="progress"><div id="progress"></div></div>
+    <h2 id="studyQuestion">Choose a deck to begin</h2>
+    <div id="studyAnswer" class="answer" hidden></div>
+    <div class="actions">
+      <button id="revealBtn">Reveal Answer</button>
+    </div>
+    <div class="actions">
+      <button class="danger" id="againBtn">Study Again</button>
+      <button id="knowBtn">I Know This ✓</button>
+    </div>
+  </section>
+</main>
+
+<footer>Made for curious minds · FlashLearn</footer>
+
+<script>
+const starter = [
+ {id:1,q:"What is HTML?",a:"HTML stands for HyperText Markup Language. It structures web pages.",cat:"Web Development",mastered:false},
+ {id:2,q:"What is CSS?",a:"CSS is used to style and design HTML elements.",cat:"Web Development",mastered:false},
+ {id:3,q:"What is JavaScript?",a:"JavaScript is a programming language used to create interactive web experiences.",cat:"Programming",mastered:false},
+ {id:4,q:"What is an API?",a:"An API allows different software applications to communicate.",cat:"Programming",mastered:false}
+];
+
+let cards = JSON.parse(localStorage.getItem("flashlearn_cards") || "null") || starter;
+let studied = Number(localStorage.getItem("flashlearn_studied") || 0);
+let selectedDeck = "All";
+let current = 0;
+let showing = false;
+let editing = null;
+
+const $ = id => document.getElementById(id);
+const save = () => {
+ localStorage.setItem("flashlearn_cards",JSON.stringify(cards));
+ localStorage.setItem("flashlearn_studied",studied);
+ render();
+};
+
+function filtered() {
+ return cards.filter(c =>
+  (selectedDeck==="All" || c.cat===selectedDeck) &&
+  (c.q+" "+c.a).toLowerCase().includes($("search").value.toLowerCase())
+ );
+}
+
+function render() {
+ $("total").textContent=cards.length;
+ $("studied").textContent=studied;
+ $("mastered").textContent=cards.filter(c=>c.mastered).length;
+
+ const categories=["All",...new Set(cards.map(c=>c.cat))];
+ $("decks").innerHTML=categories.map(d=>
+  `<button class="deck ${d===selectedDeck?'active':''}" data-deck="${escapeHTML(d)}">${escapeHTML(d)}</button>`
+ ).join("");
+
+ $("cardList").innerHTML=filtered().map(c=>`
+  <div class="card-row">
+   <div><strong>${escapeHTML(c.q)}</strong><br><small>${escapeHTML(c.cat)} · ${c.mastered?"Mastered":"Learning"}</small></div>
+   <div>
+    <button class="secondary" data-edit="${c.id}">Edit</button>
+    <button class="danger" data-delete="${c.id}">×</button>
+   </div>
+  </div>`).join("") || '<p class="muted">No cards found. Add your first flashcard!</p>';
+
+ $("decks").querySelectorAll("[data-deck]").forEach(b=>b.onclick=()=>{
+  selectedDeck=b.dataset.deck;current=0;render();study();
+ });
+ $("cardList").querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editCard(+b.dataset.edit));
+ $("cardList").querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>deleteCard(+b.dataset.delete));
+}
+
+function escapeHTML(value) {
+ return String(value).replace(/[&<>"']/g,c=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ }[c]));
+}
+
+function study() {
+ const list=filtered();
+ if(!list.length) {
+  $("studyQuestion").textContent="No cards in this deck";
+  $("studyAnswer").hidden=true;
+  $("counter").textContent="0 cards";
+  $("progress").style.width="0%";
+  return;
+ }
+ current=(current+list.length)%list.length;
+ const c=list[current];
+ showing=false;
+ $("studyQuestion").textContent=c.q;
+ $("studyAnswer").textContent=c.a;
+ $("studyAnswer").hidden=true;
+ $("revealBtn").textContent="Reveal Answer";
+ $("counter").textContent=`Card ${current+1} of ${list.length}`;
+ $("progress").style.width=`${((current+1)/list.length)*100}%`;
+}
+
+$("revealBtn").onclick=()=>{
+ if(!$("studyAnswer").hidden) {
+  $("studyAnswer").hidden=true;
+  $("revealBtn").textContent="Reveal Answer";
+ } else {
+  $("studyAnswer").hidden=false;
+  $("revealBtn").textContent="Hide Answer";
+ }
+};
+
+$("knowBtn").onclick=()=>{
+ const list=filtered();
+ if(!list.length)return;
+ const c=list[current];
+ if(!c.mastered)c.mastered=true;
+ studied++;
+ save();
+ current++;
+ study();
+};
+
+$("againBtn").onclick=()=>{
+ const list=filtered();
+ if(!list.length)return;
+ current++;
+ study();
+};
+
+$("addBtn").onclick=()=>{
+ editing=null;
+ $("editorTitle").textContent="Create flashcard";
+ $("cardForm").reset();
+ $("category").value=selectedDeck==="All"?"General":selectedDeck;
+ $("editor").style.display="block";
+ $("question").focus();
+};
+
+function editCard(id) {
+ const c=cards.find(x=>x.id===id);
+ if(!c)return;
+ editing=id;
+ $("editorTitle").textContent="Edit flashcard";
+ $("question").value=c.q;
+ $("answer").value=c.a;
+ $("category").value=c.cat;
+ $("editor").style.display="block";
+}
+
+function deleteCard(id) {
+ if(!confirm("Delete this flashcard?"))return;
+ cards=cards.filter(c=>c.id!==id);
+ selectedDeck="All";
+ current=0;
+ save();
+ study();
+}
+
+$("cardForm").onsubmit=e=>{
+ e.preventDefault();
+ const data={
+  q:$("question").value.trim(),
+  a:$("answer").value.trim(),
+  cat:$("category").value.trim()
+ };
+ if(!data.q||!data.a||!data.cat)return;
+ if(editing) {
+  const c=cards.find(x=>x.id===editing);
+  Object.assign(c,data);
+ } else {
+  cards.push({id:Date.now(),...data,mastered:false});
+ }
+ $("editor").style.display="none";
+ selectedDeck="All";
+ current=0;
+ save();
+ study();
+};
+
+$("cancelBtn").onclick=()=> $("editor").style.display="none";
+$("search").oninput=()=>{current=0;render();study()};
+
+$("themeBtn").onclick=()=>{
+ document.body.classList.toggle("dark");
+ localStorage.setItem("flashlearn_dark",document.body.classList.contains("dark"));
+};
+if(localStorage.getItem("flashlearn_dark")==="true")
+ document.body.classList.add("dark");
+
+render();
+study();
+</script>
+</body>
