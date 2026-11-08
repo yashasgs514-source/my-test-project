@@ -26,7 +26,7 @@ A simple, responsive flashcard learning application built using HTML, CSS, and J
 
 1. Clone this repository:
 
-   git clone https://github.com/YOUR_USERNAME/flashcard-learning-app.git
+   git clone https://github.com/yashu/flashcard-learning-app.git
 
 2. Open the project folder.
 3. Open index.html in your browser.
